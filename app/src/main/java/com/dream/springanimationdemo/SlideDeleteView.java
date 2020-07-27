@@ -3,6 +3,7 @@ package com.dream.springanimationdemo;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 
 import androidx.annotation.Nullable;
@@ -12,8 +13,10 @@ import androidx.dynamicanimation.animation.SpringForce;
 
 public class SlideDeleteView extends View {
 
-    float lastMoveX;
-    float lastMoveY;
+    private VelocityTracker velocityTracker;
+
+    private float lastMoveX;
+    private float lastMoveY;
 
     public SlideDeleteView(Context context) {
         super(context);
@@ -33,6 +36,13 @@ public class SlideDeleteView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+
+        if(velocityTracker == null){
+            velocityTracker = VelocityTracker.obtain();//必须和recycle()配对
+        }
+        velocityTracker.addMovement(event);
+
+
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 lastMoveX = event.getX();
@@ -40,6 +50,9 @@ public class SlideDeleteView extends View {
                 break;
 
             case MotionEvent.ACTION_MOVE:
+                velocityTracker.computeCurrentVelocity(1000,2000);
+                int X = (int)velocityTracker.getXVelocity();
+                int Y = (int)velocityTracker.getYVelocity();
                 this.setTranslationX(this.getX() + (event.getX() - lastMoveX));
                 break;
 
@@ -47,6 +60,11 @@ public class SlideDeleteView extends View {
                 break;
 
             case MotionEvent.ACTION_UP:
+                if(velocityTracker != null){
+                    velocityTracker.recycle();
+                    velocityTracker.clear();
+                    velocityTracker = null;
+                }
                 reset();
                 break;
 
@@ -56,6 +74,8 @@ public class SlideDeleteView extends View {
         return true;
     }
 
+
+    //复位view
     private void reset() {
         SpringForce spring = new SpringForce(0)
                 .setDampingRatio(SpringForce.DAMPING_RATIO_LOW_BOUNCY)
